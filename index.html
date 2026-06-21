@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Clay Tracker</title>
+<style>
+:root{
+  --orange:#D85A30;--orange-dark:#7a2e12;--orange-mid:#C04820;
+  --blue:#1E5FAD;--blue-bg:#E8F1FB;--red:#A32D2D;--red-bg:#FCEBEB;
+  --green:#1D7A4E;--green-bg:#E4F5EC;--bg:#F2F1EF;--card:#FFFFFF;
+  --border:rgba(0,0,0,0.1);--text:#1A1A18;--text2:#5A5A56;--text3:#9A9A94;
+  --shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#111110;--card:#1E1E1C;--border:rgba(255,255,255,0.1);
+  --text:#F0F0EC;--text2:#A0A09A;--text3:#606060;
+  --blue-bg:#0D2540;--red-bg:#2D1010;--green-bg:#0A2519;
+}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+.app{max-width:430px;margin:0 auto;padding:0 0 84px 0;}
+
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--card);border-top:0.5px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom);}
+.nav-btn{flex:1;padding:10px 2px 8px;border:none;background:transparent;color:var(--text3);font-size:9px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.nav-btn.on{color:var(--blue);}
+.nav-btn svg{width:20px;height:20px;}
+
+.pg{display:none;padding:12px;}
+.pg.on{display:block;}
+.pg-header{font-size:22px;font-weight:700;color:var(--text);margin-bottom:14px;letter-spacing:-0.5px;}
+
+.card{background:var(--card);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);}
+.card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;}
+
+.dtabs{display:flex;gap:4px;margin-bottom:12px;background:var(--bg);border-radius:10px;padding:3px;}
+.dtab{flex:1;padding:6px 4px;border:none;border-radius:8px;background:transparent;color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;text-align:center;}
+.dtab.on{background:var(--card);color:var(--text);font-weight:600;box-shadow:var(--shadow);}
+
+.fr{margin-bottom:10px;}
+.fr label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500;}
+.frinput{width:100%;padding:9px 12px;font-size:14px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+
+.log-dd{width:100%;padding:9px 12px;font-size:14px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text);outline:none;cursor:pointer;}
+
+.wx-btn{width:100%;display:flex;align-items:center;gap:8px;padding:9px 12px;border:0.5px solid var(--border);border-radius:10px;background:var(--bg);color:var(--text2);font-size:13px;cursor:pointer;margin-bottom:8px;font-weight:500;}
+.wx-res{font-size:12px;padding:6px 10px;background:var(--green-bg);color:var(--green);border-radius:8px;margin-bottom:8px;display:none;font-weight:500;}
+
+.start-btn{width:100%;padding:14px;background:var(--orange);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px;}
+.start-btn:active{transform:scale(0.98);}
+
+/* SHOOT */
+.sh-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;padding:12px;}
+.sh-back{padding:7px 12px;border:0.5px solid var(--border);border-radius:10px;background:var(--card);color:var(--text);font-size:13px;cursor:pointer;white-space:nowrap;font-weight:500;flex-shrink:0;}
+.sh-info{flex:1;min-width:0;}
+.sh-title{font-size:15px;font-weight:700;color:var(--text);line-height:1.2;}
+.sh-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+.pbar{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden;}
+.pfill{height:3px;background:var(--orange);border-radius:2px;transition:width 0.3s ease;}
+.tgt-area{padding:0 12px;}
+.action-btns{padding:10px 12px 0;}
+
+.single-layout{display:flex;flex-direction:column;gap:8px;}
+.top-btn{min-height:160px;}
+.bot-row{display:flex;gap:8px;}
+.bot-row .tbtn{flex:1;min-height:120px;}
+
+.pair-layout{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:8px;}
+.pair-layout .tbtn{min-height:140px;}
+
+.tbtn{border:1.5px solid var(--border);border-radius:16px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;background:var(--card);padding:12px;width:100%;position:relative;overflow:hidden;box-shadow:var(--shadow);}
+.tbtn:active{transform:scale(0.97);}
+.tbtn.disabled{pointer-events:none;opacity:0.32;}
+.tbtn.hit-s{border-color:var(--blue);background:var(--blue-bg);}
+.tbtn.miss-s{border-color:var(--red);background:var(--red-bg);}
+.tbtn.opt-s{background:var(--card);}
+.tbtn-label{font-size:14px;font-weight:700;color:var(--text);text-align:center;pointer-events:none;}
+.tbtn-sub{font-size:11px;color:var(--text2);text-align:center;pointer-events:none;}
+.tbtn-res{font-size:12px;font-weight:700;margin-top:2px;pointer-events:none;}
+.hit-s .tbtn-res{color:var(--blue);}
+.miss-s .tbtn-res{color:var(--red);}
+.clay-svg{display:block;pointer-events:none;}
+.duck-canvas{display:block;pointer-events:none;}
+
+/* Duck fly animation */
+@keyframes duckFlyAway{
+  0%{transform:translate(0,0) scale(1) rotate(0deg);opacity:1;}
+  25%{transform:translate(30px,-40px) scale(0.85) rotate(-20deg);opacity:1;}
+  100%{transform:translate(130px,-110px) scale(0.1) rotate(-35deg);opacity:0;}
+}
+.duck-flying{position:absolute;animation:duckFlyAway 0.72s cubic-bezier(0.4,0,1,1) forwards;pointer-events:none;}
+
+/* Option bird image */
+.opt-img{width:56px;height:56px;object-fit:contain;pointer-events:none;filter:invert(27%) sepia(90%) saturate(800%) hue-rotate(190deg) brightness(90%);}
+
+/* FANFARE */
+@keyframes fanfareIn{0%{transform:scale(0.3);opacity:0;}60%{transform:scale(1.1);}100%{transform:scale(1);opacity:1;}}
+@keyframes confettiFall{0%{transform:translateY(-10px) rotate(0deg);opacity:1;}100%{transform:translateY(140px) rotate(720deg);opacity:0;}}
+.fanfare-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:900;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+.fanfare-num{font-size:110px;font-weight:900;color:#FFD700;letter-spacing:-4px;animation:fanfareIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;line-height:1;text-shadow:0 0 40px rgba(255,215,0,0.5);}
+.fanfare-label{font-size:22px;font-weight:700;color:#fff;letter-spacing:1px;}
+.fanfare-sub{font-size:14px;color:rgba(255,255,255,0.7);}
+.fanfare-btn{margin-top:24px;padding:14px 36px;background:#FFD700;color:#1A1A18;font-size:16px;font-weight:800;border:none;border-radius:14px;cursor:pointer;}
+.confetti-piece{position:absolute;width:8px;height:8px;border-radius:2px;animation:confettiFall linear forwards;}
+
+.finish{text-align:center;padding:30px 12px;}
+.finish-score{font-size:58px;font-weight:800;color:var(--text);letter-spacing:-2px;}
+.finish-pct{font-size:24px;color:var(--text2);margin-top:4px;font-weight:500;}
+.finish-disc{font-size:13px;color:var(--text3);margin-top:6px;}
+.save-btn{width:100%;padding:14px;background:var(--blue);border:none;border-radius:12px;color:#fff;font-size:16px;font-weight:700;cursor:pointer;}
+.save-btn:active{transform:scale(0.98);}
+
+.stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.stat{background:var(--card);border-radius:12px;padding:10px;text-align:center;box-shadow:var(--shadow);}
+.stat-v{font-size:20px;font-weight:700;color:var(--text);}
+.stat-l{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:0.3px;}
+.hi{border-bottom:0.5px solid var(--border);padding:12px 0;}
+.hi:last-child{border-bottom:none;}
+.hi-top{display:flex;align-items:flex-start;justify-content:space-between;}
+.hi-score{font-size:22px;font-weight:700;color:var(--text);}
+.hi-pct{font-size:13px;color:var(--text2);margin-left:5px;}
+.hi-disc{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.3px;}
+.hi-meta{font-size:11px;color:var(--text3);margin-top:3px;}
+.hi-notes{font-size:11px;color:var(--text3);font-style:italic;margin-top:2px;}
+.stn-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px;}
+.chip{font-size:10px;font-weight:600;padding:3px 7px;border-radius:20px;}
+.chip.good{background:var(--green-bg);color:var(--green);}
+.chip.ok{background:#FEF3E2;color:#7A4E0A;}
+.chip.bad{background:var(--red-bg);color:var(--red);}
+.del-btn{background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;padding:0 2px;}
+.empty{text-align:center;padding:24px;color:var(--text3);font-size:13px;}
+
+.ftabs{display:flex;gap:4px;margin-bottom:12px;background:var(--card);border-radius:10px;padding:3px;box-shadow:var(--shadow);}
+.ftab{flex:1;padding:6px 2px;border:none;border-radius:8px;background:transparent;color:var(--text3);font-size:11px;font-weight:500;cursor:pointer;text-align:center;}
+.ftab.on{background:var(--bg);color:var(--text);font-weight:700;}
+
+/* EQUIPMENT */
+.eq-type-row{display:flex;gap:8px;margin-bottom:10px;}
+.eq-type-btn{flex:1;padding:10px;border:1.5px solid var(--border);border-radius:12px;background:var(--bg);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.eq-type-btn.on{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);}
+.eq-type-btn svg{width:28px;height:28px;}
+.eq-save-btn{width:100%;padding:12px;background:var(--green);border:none;border-radius:12px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px;}
+.eq-save-btn:active{transform:scale(0.98);}
+.eq-item{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);}
+.eq-item:last-child{border-bottom:none;}
+.eq-item-name{font-size:14px;font-weight:600;color:var(--text);}
+.eq-item-detail{font-size:11px;color:var(--text3);margin-top:2px;}
+.eq-del{background:none;border:none;color:var(--text3);font-size:16px;cursor:pointer;padding:4px;}
+
+/* STATS */
+.disc-section{margin-bottom:18px;}
+.disc-section-title{font-size:16px;font-weight:700;margin-bottom:8px;padding-left:2px;}
+.stat-filter-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.sf-btn{padding:5px 10px;border:0.5px solid var(--border);border-radius:20px;background:transparent;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;}
+.sf-btn.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+.export-btn{width:100%;padding:11px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:10px;color:var(--green);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:8px;}
+
+/* ANALYTICS DASHBOARD */
+.sf-btn{padding:5px 10px;border:0.5px solid var(--border);border-radius:20px;background:transparent;color:var(--text2);font-size:11px;font-weight:500;cursor:pointer;}
+.sf-btn.on{background:var(--blue);color:#fff;border-color:var(--blue);}
+.export-btn{display:flex;align-items:center;justify-content:center;gap:6px;padding:11px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:10px;color:var(--green);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:0;}
+.log-row{border-bottom:0.5px solid var(--border);padding:10px 0;cursor:pointer;}
+.log-row:last-child{border-bottom:none;}
+.log-row:active{background:var(--bg);margin:0 -14px;padding:10px 14px;border-radius:8px;}
+.log-row-top{display:flex;justify-content:space-between;align-items:baseline;}
+.log-row-score{font-size:18px;font-weight:700;color:var(--text);}
+.log-row-pct{font-size:12px;color:var(--text2);margin-left:4px;}
+.log-row-disc{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.3px;}
+.log-row-meta{font-size:11px;color:var(--text3);margin-top:2px;}
+.modal-field{margin-bottom:10px;}
+.modal-label{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:3px;}
+.modal-val{font-size:14px;color:var(--text);}
+.modal-stn-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px;}
+.modal-stn{background:var(--bg);border-radius:8px;padding:6px;text-align:center;}
+.modal-stn-lbl{font-size:9px;color:var(--text3);font-weight:600;}
+.modal-stn-val{font-size:13px;font-weight:700;color:var(--text);}
+.modal-stn.good .modal-stn-val{color:var(--green);}
+.modal-stn.ok .modal-stn-val{color:#7A4E0A;}
+.modal-stn.bad .modal-stn-val{color:var(--red);}
+
+
+/* ── SPORTING CLAYS STATION FLOW ── */
+.sc-pg{display:none;position:fixed;inset:0;z-index:200;overflow-y:auto;padding-bottom:40px;}
+.sc-pg.on{display:block;}
+
+/* Dark Range theme */
+.sc-bg{background:#12131a;min-height:100%;padding:16px 14px 40px;}
+.sc-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-top:env(safe-area-inset-top);}
+.sc-back{background:rgba(255,255,255,0.08);border:none;border-radius:10px;padding:8px 14px;color:#fff;font-size:13px;cursor:pointer;font-weight:500;}
+.sc-title{font-size:20px;font-weight:800;color:#fff;letter-spacing:-0.5px;}
+.sc-subtitle{font-size:12px;color:rgba(255,255,255,0.5);margin-top:2px;}
+
+/* Machine Grid */
+.sc-machine-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.sc-machine{min-height:90px;border:2px solid rgba(255,255,255,0.12);border-radius:14px;background:rgba(255,255,255,0.05);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:rgba(255,255,255,0.4);font-size:13px;font-weight:600;transition:all 0.15s;-webkit-tap-highlight-color:transparent;}
+.sc-machine.on{border-color:#39FF14;background:rgba(57,255,20,0.08);color:#39FF14;box-shadow:0 0 18px rgba(57,255,20,0.18);}
+.sc-machine svg{width:24px;height:24px;}
+
+/* Presentation selector */
+.sc-pres-row{display:flex;gap:8px;margin-bottom:20px;}
+.sc-pres-btn{flex:1;padding:12px 6px;border:2px solid rgba(255,255,255,0.12);border-radius:12px;background:rgba(255,255,255,0.04);color:rgba(255,255,255,0.5);font-size:12px;font-weight:600;cursor:pointer;text-align:center;transition:all 0.15s;}
+.sc-pres-btn.on{border-color:#39FF14;background:rgba(57,255,20,0.08);color:#39FF14;}
+
+/* Attempt selector */
+.sc-label{font-size:11px;font-weight:700;color:rgba(255,255,255,0.4);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;}
+.sc-attempt-sel{width:100%;padding:12px 14px;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.12);border-radius:12px;color:#fff;font-size:15px;font-weight:600;cursor:pointer;outline:none;margin-bottom:20px;}
+
+/* Start button */
+.sc-start-btn{width:100%;padding:18px;background:#39FF14;border:none;border-radius:14px;color:#12131a;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:0.2px;}
+.sc-start-btn:active{transform:scale(0.98);}
+.sc-start-btn:disabled{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.3);}
+
+/* Live shooting screen */
+.sc-attempt-header{text-align:center;margin-bottom:16px;}
+.sc-attempt-label{font-size:13px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.8px;}
+.sc-attempt-big{font-size:28px;font-weight:800;color:#fff;margin-top:4px;}
+
+/* Target boxes */
+.sc-targets-row{display:flex;gap:10px;margin-bottom:24px;}
+.sc-target-box{flex:1;min-height:90px;border-radius:14px;border:2px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:all 0.2s;}
+.sc-target-box.active{border-color:#FFD700;background:rgba(255,215,0,0.08);box-shadow:0 0 16px rgba(255,215,0,0.2);}
+.sc-target-box.hit{border-color:#39FF14;background:rgba(57,255,20,0.12);}
+.sc-target-box.miss{border-color:#DC143C;background:rgba(220,20,60,0.12);}
+.sc-target-box-lbl{font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;}
+.sc-target-box-machine{font-size:15px;font-weight:800;color:#fff;}
+.sc-target-box-result{font-size:22px;}
+
+/* HIT / MISS buttons */
+.sc-hit-btn,.sc-miss-btn{width:100%;padding:22px;border:none;border-radius:16px;font-size:20px;font-weight:800;cursor:pointer;letter-spacing:0.5px;position:relative;overflow:hidden;transition:transform 0.08s;}
+.sc-hit-btn{background:#39FF14;color:#12131a;margin-bottom:10px;}
+.sc-miss-btn{background:#DC143C;color:#fff;}
+.sc-hit-btn:active,.sc-miss-btn:active{transform:scale(0.97);}
+.ripple{position:absolute;border-radius:50%;transform:scale(0);animation:rippleAnim 0.5s linear;pointer-events:none;}
+.sc-hit-btn .ripple{background:rgba(255,255,255,0.3);}
+.sc-miss-btn .ripple{background:rgba(255,255,255,0.2);}
+@keyframes rippleAnim{to{transform:scale(4);opacity:0;}}
+
+/* Summary screen */
+.sc-shot-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:20px;}
+.sc-shot-chip{width:52px;height:52px;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:9px;font-weight:700;text-transform:uppercase;gap:2px;}
+.sc-shot-chip.hit{background:rgba(57,255,20,0.15);border:1.5px solid #39FF14;color:#39FF14;}
+.sc-shot-chip.miss{background:rgba(220,20,60,0.15);border:1.5px solid #DC143C;color:#DC143C;}
+.sc-shot-chip-icon{font-size:18px;}
+
+.sc-continue-btn{width:100%;padding:17px;background:#39FF14;border:none;border-radius:14px;color:#12131a;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;}
+.sc-stop-btn{width:100%;padding:17px;background:rgba(220,20,60,0.15);border:1.5px solid #DC143C;border-radius:14px;color:#DC143C;font-size:16px;font-weight:700;cursor:pointer;}
+
+/* Review screen */
+.sc-review-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:14px;margin-bottom:10px;}
+.sc-review-stn{font-size:13px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;}
+.sc-review-setup{font-size:14px;color:#fff;margin-bottom:6px;}
+.sc-review-bar{height:6px;background:rgba(255,255,255,0.1);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.sc-review-fill{height:6px;border-radius:3px;transition:width 0.4s;}
+.sc-review-ratio{font-size:13px;color:rgba(255,255,255,0.6);}
+.sc-review-ratio strong{color:#fff;}
+.sc-json-block{background:#0d0e14;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;font-size:10px;color:#39FF14;font-family:monospace;overflow-x:auto;white-space:pre;max-height:180px;overflow-y:auto;margin-top:10px;}
+.sc-new-round-btn{width:100%;padding:17px;background:#39FF14;border:none;border-radius:14px;color:#12131a;font-size:16px;font-weight:800;cursor:pointer;}
+
+@keyframes scFadeIn{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+.sc-fade-in{animation:scFadeIn 0.22s ease-out forwards;}
+
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- LOG PAGE -->
+<div id="pg-log" class="pg on">
+  <div class="pg-header">🎯 Clay Tracker</div>
+  <div class="card">
+    <div class="card-title">Discipline</div>
+    <div class="dtabs" id="disc-tabs">
+      <button class="dtab on" onclick="selDisc('sc',this)">Sporting</button>
+      <button class="dtab" onclick="selDisc('am',this)">Am. Skeet</button>
+      <button class="dtab" onclick="selDisc('is',this)">Intl. Skeet</button>
+    </div>
+    <div class="fr"><label>Date</label><input type="date" id="date-in" class="frinput" style="width:100%;"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Equipment</div>
+    <div class="fr"><label>Gun</label>
+      <select class="log-dd" id="log-gun-sel" onchange="onLogGunChange()">
+        <option value="">— Select gun —</option>
+      </select>
+    </div>
+    <!-- Choke area: shown after gun selected -->
+    <div id="log-choke-area"></div>
+    <div class="fr"><label>Ammo</label>
+      <select class="log-dd" id="log-ammo-sel">
+        <option value="">— Select ammo —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Conditions</div>
+    <button class="wx-btn" onclick="fetchWx()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 5-7 13-7 13S5 14 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+      <span id="wx-txt">Import weather from my location</span>
+    </button>
+    <div id="wx-res" class="wx-res"></div>
+    <div class="g2">
+      <div class="fr"><label>Temp (°C)</label><input type="number" id="temp-in" class="frinput" placeholder="18"></div>
+      <div class="fr"><label>Wind (km/h)</label><input type="number" id="wind-in" class="frinput" placeholder="15"></div>
+    </div>
+    <div class="g2">
+      <div class="fr"><label>Conditions</label>
+        <select id="wx-in" class="frinput"><option value="">—</option><option>Sunny</option><option>Partly cloudy</option><option>Overcast</option><option>Light rain</option><option>Heavy rain</option><option>Foggy</option><option>Windy</option></select>
+      </div>
+      <div class="fr"><label>Light</label>
+        <select id="lt-in" class="frinput"><option value="">—</option><option>Bright</option><option>Flat</option><option>Low sun / glare</option><option>Dusk</option></select>
+      </div>
+    </div>
+    <div class="fr"><label>Notes</label><input type="text" id="notes-in" class="frinput" placeholder="focus, observations..."></div>
+  </div>
+  <button class="start-btn" onclick="startShoot()">Start Shooting →</button>
+</div>
+
+<!-- SHOOT PAGE -->
+<div id="pg-shoot" class="pg">
+  <div class="sh-header">
+    <button class="sh-back" onclick="goPg('log')">← Back</button>
+    <div class="sh-info">
+      <div class="sh-title" id="sh-title">—</div>
+      <div class="sh-sub" id="sh-sub">0 hit</div>
+      <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+    </div>
+  </div>
+  <div class="tgt-area" id="tgt-area"></div>
+  <div class="action-btns" id="action-btns"></div>
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="pg-history" class="pg">
+  <div class="pg-header">History</div>
+  <div class="ftabs" id="hist-tabs">
+    <button class="ftab on" onclick="filtH('all',this)">All</button>
+    <button class="ftab" onclick="filtH('sc',this)">Sporting</button>
+    <button class="ftab" onclick="filtH('am',this)">Am. Skeet</button>
+    <button class="ftab" onclick="filtH('is',this)">Intl. Skeet</button>
+  </div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-v" id="h-n">0</div><div class="stat-l">Rounds</div></div>
+    <div class="stat"><div class="stat-v" id="h-avg">—</div><div class="stat-l">Avg %</div></div>
+    <div class="stat"><div class="stat-v" id="h-best">—</div><div class="stat-l">Best %</div></div>
+  </div>
+  <div class="card" id="h-list"><div class="empty">No rounds yet. Log your first!</div></div>
+</div>
+
+<!-- EQUIPMENT PAGE -->
+<div id="pg-equipment" class="pg">
+  <div class="pg-header">Equipment</div>
+  <div class="card">
+    <div class="card-title">Add Gun</div>
+    <div class="fr"><label>Action type</label>
+      <div class="eq-type-row">
+        <button class="eq-type-btn on" id="eq-type-ou" onclick="setGunType('ou',this)">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="36" height="7" rx="2"/><rect x="2" y="13" width="36" height="7" rx="2"/></svg>
+          Over/Under
+        </button>
+        <button class="eq-type-btn" id="eq-type-sa" onclick="setGunType('sa',this)">
+          <svg viewBox="0 0 40 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="8" width="36" height="8" rx="2"/><circle cx="10" cy="12" r="3"/></svg>
+          Semi-Auto
+        </button>
+      </div>
+    </div>
+    <div class="fr"><label>Brand &amp; Model</label><input type="text" id="eq-gun-model" class="frinput" placeholder="e.g. Beretta A400 Xcel"></div>
+    <button class="eq-save-btn" onclick="saveGun()">Save Gun Profile</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Saved Guns</div>
+    <div id="saved-guns-list"><div class="empty" style="padding:8px 0;">No guns saved yet.</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Add Ammo</div>
+    <div class="g2">
+      <div class="fr"><label>Make</label><input type="text" id="eq-ammo-make" class="frinput" placeholder="e.g. Fiocchi"></div>
+      <div class="fr"><label>Model</label><input type="text" id="eq-ammo-model" class="frinput" placeholder="e.g. Target"></div>
+    </div>
+    <div class="g2">
+      <div class="fr"><label>Shot #</label>
+        <select id="eq-ammo-shot" class="frinput"><option>#7.5</option><option>#8</option><option>#8.5</option><option>#9</option><option>#7</option><option>#6</option></select>
+      </div>
+      <div class="fr"><label>Powder (dr)</label><input type="text" id="eq-ammo-powder" class="frinput" placeholder="e.g. 2¾"></div>
+    </div>
+    <div class="g2">
+      <div class="fr"><label>Oz shot</label><input type="text" id="eq-ammo-oz" class="frinput" placeholder="e.g. 1 1/8"></div>
+      <div class="fr"><label>FPS</label><input type="number" id="eq-ammo-fps" class="frinput" placeholder="e.g. 1200"></div>
+    </div>
+    <button class="eq-save-btn" onclick="saveAmmo()">Save Ammo Profile</button>
+  </div>
+  <div class="card">
+    <div class="card-title">Saved Ammo</div>
+    <div id="saved-ammo-list"><div class="empty" style="padding:8px 0;">No ammo saved yet.</div></div>
+  </div>
+</div>
+
+<!-- STATS PAGE -->
+<div id="pg-stats" class="pg">
+  <div class="pg-header">Analytics</div>
+
+  <!-- ZONE A: Global Filters -->
+  <div class="card" id="stats-zone-a">
+    <div class="card-title">Filters</div>
+    <!-- Discipline tabs -->
+    <div class="dtabs" id="stats-disc-tabs" style="margin-bottom:10px;">
+      <button class="dtab on" onclick="statSetDisc('all',this)">All</button>
+      <button class="dtab" onclick="statSetDisc('sc',this)">Sporting</button>
+      <button class="dtab" onclick="statSetDisc('am',this)">Am. Skeet</button>
+      <button class="dtab" onclick="statSetDisc('is',this)">Intl. Skeet</button>
+    </div>
+    <!-- Date range presets -->
+    <div style="margin-bottom:8px;">
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Date Range</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="date-preset-btns">
+        <button class="sf-btn on" onclick="statSetDatePreset('all',this)">All time</button>
+        <button class="sf-btn" onclick="statSetDatePreset('30',this)">Last 30d</button>
+        <button class="sf-btn" onclick="statSetDatePreset('90',this)">Last 90d</button>
+        <button class="sf-btn" onclick="statSetDatePreset('ytd',this)">YTD</button>
+        <button class="sf-btn" onclick="statSetDatePreset('custom',this)">Custom</button>
+      </div>
+      <div id="custom-date-row" style="display:none;margin-top:8px;display:none;">
+        <div class="g2">
+          <div class="fr" style="margin-bottom:0;"><label>From</label><input type="date" id="stat-date-from" class="frinput" onchange="statApplyFilters()"></div>
+          <div class="fr" style="margin-bottom:0;"><label>To</label><input type="date" id="stat-date-to" class="frinput" onchange="statApplyFilters()"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Split dimension -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Compare by</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;" id="split-dim-btns">
+        <button class="sf-btn on" onclick="statSetSplit('none',this)">None</button>
+        <button class="sf-btn" onclick="statSetSplit('gun',this)">Gun</button>
+        <button class="sf-btn" onclick="statSetSplit('choke',this)">Choke</button>
+        <button class="sf-btn" onclick="statSetSplit('ammo',this)">Ammo</button>
+        <button class="sf-btn" onclick="statSetSplit('weather',this)">Weather</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ZONE B: Summary KPIs -->
+  <div id="stats-kpis" class="stat-row" style="margin-bottom:10px;"></div>
+
+  <!-- ZONE B: Main Chart -->
+  <div class="card" style="padding:12px;" id="stats-chart-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <div class="card-title" style="margin-bottom:0;" id="stats-chart-title">Score % Over Time</div>
+    </div>
+    <div style="position:relative;height:200px;"><canvas id="stats-main-chart"></canvas></div>
+  </div>
+
+  <!-- ZONE B: Station Breakdown Chart -->
+  <div class="card" style="padding:12px;">
+    <div class="card-title">Station Breakdown</div>
+    <div style="position:relative;height:160px;"><canvas id="stats-stn-chart"></canvas></div>
+  </div>
+
+  <!-- ZONE C: Raw Data Log -->
+  <div class="card" id="stats-log-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="card-title" style="margin-bottom:0;">Round Log</div>
+      <button class="export-btn" onclick="exportCSV()" style="margin-bottom:0;padding:6px 12px;font-size:12px;width:auto;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+      </button>
+    </div>
+    <div id="stats-log-list"></div>
+  </div>
+</div>
+
+<!-- ROUND DETAIL MODAL -->
+<div id="round-modal" style="display:none;position:fixed;inset:0;z-index:800;background:rgba(0,0,0,0.6);overflow-y:auto;">
+  <div style="margin:20px 12px;background:var(--card);border-radius:18px;padding:20px;max-width:406px;margin-left:auto;margin-right:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:700;color:var(--text);">Round Detail</div>
+      <button onclick="closeModal()" style="background:var(--bg);border:none;border-radius:8px;padding:6px 10px;font-size:13px;color:var(--text2);cursor:pointer;">Close</button>
+    </div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+
+<!-- SPORTING CLAYS: CONFIG -->
+<div id="sc-config" class="sc-pg">
+  <div class="sc-bg">
+    <div class="sc-header">
+      <button class="sc-back" onclick="scExit()">← Back</button>
+      <div>
+        <div class="sc-title" id="sc-config-title">Station 1</div>
+        <div class="sc-subtitle">Configure this station</div>
+      </div>
+    </div>
+    <div class="sc-label">Select machines</div>
+    <div class="sc-machine-grid" id="sc-machine-grid">
+      <button class="sc-machine" id="sc-m1" onclick="scToggleMachine(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+        Machine 1
+      </button>
+      <button class="sc-machine" id="sc-m2" onclick="scToggleMachine(2)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+        Machine 2
+      </button>
+      <button class="sc-machine" id="sc-m3" onclick="scToggleMachine(3)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+        Machine 3
+      </button>
+      <button class="sc-machine" id="sc-m4" onclick="scToggleMachine(4)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4"/></svg>
+        Machine 4
+      </button>
+    </div>
+
+    <div class="sc-label">Presentation type</div>
+    <div class="sc-pres-row">
+      <button class="sc-pres-btn on" id="sc-pres-singles" onclick="scSetPres('Singles',this)">Singles</button>
+      <button class="sc-pres-btn" id="sc-pres-report" onclick="scSetPres('Report Pair',this)">Report Pair</button>
+      <button class="sc-pres-btn" id="sc-pres-true" onclick="scSetPres('True Pair',this)">True Pair</button>
+    </div>
+
+    <div class="sc-label">Attempts</div>
+    <select class="sc-attempt-sel" id="sc-attempts">
+      <option value="1">1 attempt</option>
+      <option value="2">2 attempts</option>
+      <option value="3" selected>3 attempts</option>
+      <option value="4">4 attempts</option>
+      <option value="5">5 attempts</option>
+    </select>
+
+    <button class="sc-start-btn" id="sc-start-btn" onclick="scStartStation()">Start Shooting</button>
+  </div>
+</div>
+
+<!-- SPORTING CLAYS: LIVE SHOOT -->
+<div id="sc-shoot" class="sc-pg">
+  <div class="sc-bg">
+    <div class="sc-header">
+      <button class="sc-back" onclick="scGoConfig()">← Config</button>
+      <div>
+        <div class="sc-title" id="sc-shoot-title">Station 1</div>
+        <div class="sc-subtitle" id="sc-shoot-sub">Singles</div>
+      </div>
+    </div>
+    <div class="sc-attempt-header">
+      <div class="sc-attempt-label" id="sc-attempt-label">Attempt 1 of 3</div>
+      <div class="sc-attempt-big" id="sc-attempt-big">Target A</div>
+    </div>
+    <div class="sc-targets-row" id="sc-targets-row"></div>
+    <button class="sc-hit-btn" id="sc-hit-btn" onclick="scLogResult('hit',event)">✓ HIT</button>
+    <button class="sc-miss-btn" id="sc-miss-btn" onclick="scLogResult('miss',event)">✕ MISS</button>
+  </div>
+</div>
+
+<!-- SPORTING CLAYS: SUMMARY -->
+<div id="sc-summary" class="sc-pg">
+  <div class="sc-bg">
+    <div class="sc-header">
+      <div>
+        <div class="sc-title" id="sc-sum-title">Station 1 Summary</div>
+        <div class="sc-subtitle" id="sc-sum-sub"></div>
+      </div>
+    </div>
+    <div class="sc-label">Shot results</div>
+    <div class="sc-shot-grid" id="sc-shot-grid"></div>
+    <button class="sc-continue-btn" onclick="scNextStation()">Continue to Next Station →</button>
+    <button class="sc-stop-btn" onclick="scStopRound()">Stop &amp; Review Round</button>
+  </div>
+</div>
+
+<!-- SPORTING CLAYS: REVIEW -->
+<div id="sc-review" class="sc-pg">
+  <div class="sc-bg">
+    <div class="sc-header">
+      <div>
+        <div class="sc-title">Round Complete! 🏆</div>
+        <div class="sc-subtitle" id="sc-review-sub"></div>
+      </div>
+    </div>
+    <div id="sc-review-list"></div>
+    <div class="sc-label" style="margin-top:14px;">Raw Data Export</div>
+    <div class="sc-json-block" id="sc-json-block"></div>
+    <div style="height:12px;"></div>
+    <button class="sc-new-round-btn" onclick="scNewRound()">Start New Round</button>
+  </div>
+</div>
+
+</div><!-- end .app -->
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn on" id="nav-log" onclick="goPg('log')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Log
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="goPg('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>History
+  </button>
+  <button class="nav-btn" id="nav-equipment" onclick="goPg('equipment')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>Gear
+  </button>
+  <button class="nav-btn" id="nav-stats" onclick="goPg('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>Stats
+  </button>
+</nav>
+
+<!-- FANFARE -->
+<div class="fanfare-overlay" id="fanfare" style="display:none;">
+  <div class="fanfare-num" id="fanfare-num">25</div>
+  <div class="fanfare-label" id="fanfare-label">PERFECT ROUND!</div>
+  <div class="fanfare-sub" id="fanfare-sub"></div>
+  <button class="fanfare-btn" onclick="closeFanfare()">Continue</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+var TODAY=new Date().toISOString().split('T')[0];
+document.getElementById('date-in').value=TODAY;
+var disc='sc', hFilt='all';
+var seq=[],idx=0,hits=0,optUsed=false,pending=null;
+var DNAMES={sc:'Sporting Clays',am:'Am. Skeet',is:'Intl. Skeet'};
+var DISC_COLORS={sc:'#D85A30',am:'#1E5FAD',is:'#1D7A4E'};
+var CHOKES=['Cylinder','Skeet','Improved Cylinder','Light Modified','Modified','Improved Modified','Full','Extra Full'];
+var gunType='ou';
+var statsParam={sc:'date',am:'date',is:'date'};
+
+/* Base64 option bird image */
+var OPT_IMG='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAMAAABOo35HAAAAD1BMVEX///8AAAB/f39AQEC/v78rT+pVAAAGxklEQVR4nO2dW6KjOgwEM8D+13wDnNwkINkSsaV20vU1H3NwU8iG8LBvN0IIIYQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQr6bZZmmeePfyvavaWVZ2rVx3/h9o822F8/d0p8gnfsefq5s+n9zY+paqpoOyj5o662ldtUawuIT9ayKi/s5vW1lbrszXbn3vCuiHr4uFNh03Eb7nerCvaY+MHXR12kLQ3TEBqYu+FrOf95tD1vRzJR3h4+9EH/UaqzKo2s0WR1U2XUJbXfe3U/opGrTZfA1kqyOqjZd1QDjyOqsyqJrGFnnwbUDc1nXILICymqnaGsIWWGqKrpGkBXSA19sqb9hBpAVWVZ/uuxJQk1UOf8es/G8XdrOFrosXxec52k53kBe1lvNk/NujvwzBlyWfRfn6m32xWVMKi5oWdYuONsfR9yNXbeFLMu0W/PsvgG32HydbQHLsuyS39SOzddx47iy6rtz1dTf9g2+DsUFK6u6K5+psrVxsIUqq3beanTzu6rrrR1QWRVXDZ8T1HS9NoUpq+yq8SOViq6X1iBlFV01GKuOlHU9bSHKKrrq81iz2ORU+F9d0jgoBe/2ULNYXI9W8WSVYnd8Wm6xBSerELrzE82Srt0WmqxC4u7vFVRrGkxWIW/ECyuV5rFk6WGDXiooB4CSpUcNe7WnaAtKVr6r0g3HCUqWelRDXxkr2AKSheHq5nv2FhztAYwrl63wbDs4rjwP4BLCFfLlvOJqtgWVLut1YKutlHBgrszjVkY05UBmvmZus5UQDNCV0VZCLkRXtpcH4mMphRUf5B2LrfhUkIV1M50SQTLlu7LYwkiE4MowyEcHwkihULMVHAe5sOqDfHAcaFfVYQshTGyGIuWOGJtFlIVTWLWOGBoF3lWlI+YnAfumvdQRI3PkFdb2JYERZFndW234lVn3rC9I7ae+0wAsK6Wwmn5l1jvsC5Ks3oXV9uvFzmFfSWj+6id56bLGL6xAWdLo0bvNtq4CZQmNdz8Vjioroxc2HrLiZGU0/k2y+v/SaesqbEqojF7YWlbq65v9W82a1a197IC2mw5acROzCY0nv+vuJuzGW04vvLXsiHF3dAVZQY03qq0OHz6q5AxZG8aJHcqqQh8UCAEi770vnxGY9CaflWITDITQE7BnSM0kb3wfEGF8B3tcCATQR0P4cHx3wPHdjnDlQFkaPBk6oCwHgixeOWgIsrIj4cLLLAeU5YCyHFCWA8pycHbFC3gVynJAWQ4oywFlOaAsB7x0cEBZDijLAWU5oCwHfMbqgLeVHVCWA+G5IZ/uaPAhqwfKcnCWxWsHFV47OKAsB3zZwQFPhw74arcHQRYHLQ2O8A4EWRy0NDhoeeCg5YD90AFlOZAGLfZDBUkWS0sjY5Kjjwj/gvUF6Utl4H44bwc39tvoJ0P1w2fYyK/uX5D6IWhpvUVNKa5xSuswYmREEOeFyQhS4xg05YhK/RDxfukpZ8ZgMUhpnU/bKSOrJAuvtEAyijMOZQQpgTJfh9gP0UpLiJhzzhZLC+taK2duQgmxtKCutZDWQoAvLaRhVZ6wMCmMANaKJOKRwxnjsY6lXFooHRGrsLTZHfPyvAK33pRcWhhnRDFa6hghlxbCsAVY9MoMvvnDFuRqgqAL2ILGkss9edhSCj59eIDMhZhpQ5kcOjMZaCe86bO059mCXGH+D21q6KxwWp6kOAe0WdpzbGmu8i9ndpR4KbawjpyAurhEfELNFcZPsA11RvtoW+q6DcE5iqghY22BxKihpYyMqa/XiuWqsCZOWFA9AtCAtaMvxJG/cEpMAA+FsBGrPRWW5EG5wnol01ZpgRmwAeuPPFullZ4wXaVlLi64huoqyVZxjSdcV5WVz7oEL43s2K5qtpqfl8qq8C6wDpTTtz3SFVXwrqprELbTVVMF3gd3aovqtdmHqqohXBlWbPx8N+qqBnFlWd9y+mRXDKbGcWVbDfSiL5MpzN+DGrbFQN2XEotRVdLXX1exLp06mYXdRVkX+x2nCz6wrzQ714Qty+RZFHk8V95ljOf5XGTrcrOTy9PKWF3wwdVVjOeVi387wFW7Rsv1122MWVY7wbbGLaudSF0jjuzvhNkaX9VKiK7BrkMLdNf1PapuvW19laqVfrq+TtXK1MXXV6paaa/ra1WttNX11ao2Wvn6flM77hsJgqkfUbXxSXn9lqkd/52qVdSv9D4Bl7BfFvVgvRlaew4/Tz/Y9Qrcna3WnjdJt39PU+Y8kIQQQgghhBBCCCGEEEIIIYQQQgghhBBCCCGEEEIIIYQQQgghhITwH9WQNZCQyEkeAAAAAElFTkSuQmCC';
+
+function ld(k,d){try{var v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}}
+function sv(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+function getRounds(){return ld('csv8',[]);}
+function getGuns(){return ld('eq_guns',[]);}
+function getAmmos(){return ld('eq_ammos',[]);}
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+
+/* ── PAGES ── */
+function goPg(p){
+  document.querySelectorAll('.pg').forEach(function(e){e.classList.remove('on');});
+  document.getElementById('pg-'+p).classList.add('on');
+  ['log','history','equipment','stats'].forEach(function(n){
+    var el=document.getElementById('nav-'+n);
+    if(el)el.classList.toggle('on',n===p);
+  });
+  if(p==='history')renderHistory();
+  if(p==='stats')statApplyFilters();
+  if(p==='equipment'){renderSavedGuns();renderSavedAmmos();setGunType(gunType,document.getElementById('eq-type-'+gunType));}
+  if(p==='log')buildLogDropdowns();
+}
+
+function selDisc(d,btn){
+  disc=d;
+  document.querySelectorAll('#disc-tabs .dtab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+}
+
+/* ── EQUIPMENT: GUN (no chokes here anymore) ── */
+function setGunType(type,btn){
+  gunType=type;
+  document.querySelectorAll('.eq-type-btn').forEach(function(b){b.classList.remove('on');});
+  if(btn)btn.classList.add('on');
+}
+
+function saveGun(){
+  var model=document.getElementById('eq-gun-model').value.trim();
+  if(!model){alert('Enter a gun brand & model.');return;}
+  var profile={id:Date.now(),type:gunType,model:model};
+  var guns=getGuns();guns.push(profile);sv('eq_guns',guns);
+  document.getElementById('eq-gun-model').value='';
+  vib(30);renderSavedGuns();buildLogDropdowns();
+}
+
+function renderSavedGuns(){
+  var guns=getGuns();
+  var el=document.getElementById('saved-guns-list');
+  if(!guns.length){el.innerHTML='<div class="empty" style="padding:8px 0;">No guns saved yet.</div>';return;}
+  el.innerHTML=guns.map(function(g){
+    var typeLabel=g.type==='ou'?'Over/Under':'Semi-Auto';
+    return'<div class="eq-item"><div><div class="eq-item-name">'+g.model+'</div><div class="eq-item-detail">'+typeLabel+'</div></div>'
+      +'<button class="eq-del" onclick="delGun('+g.id+')">🗑</button></div>';
+  }).join('');
+}
+function delGun(id){if(!confirm('Delete gun?'))return;sv('eq_guns',getGuns().filter(function(g){return g.id!==id;}));renderSavedGuns();buildLogDropdowns();}
+
+/* ── EQUIPMENT: AMMO ── */
+function saveAmmo(){
+  var make=document.getElementById('eq-ammo-make').value.trim();
+  if(!make){alert('Enter ammo make.');return;}
+  var profile={
+    id:Date.now(),make:make,
+    model:document.getElementById('eq-ammo-model').value.trim(),
+    shot:document.getElementById('eq-ammo-shot').value,
+    powder:document.getElementById('eq-ammo-powder').value.trim(),
+    oz:document.getElementById('eq-ammo-oz').value.trim(),
+    fps:document.getElementById('eq-ammo-fps').value.trim()
+  };
+  var ammos=getAmmos();ammos.push(profile);sv('eq_ammos',ammos);
+  ['eq-ammo-make','eq-ammo-model','eq-ammo-powder','eq-ammo-oz','eq-ammo-fps'].forEach(function(id){document.getElementById(id).value='';});
+  vib(30);renderSavedAmmos();buildLogDropdowns();
+}
+function renderSavedAmmos(){
+  var ammos=getAmmos();
+  var el=document.getElementById('saved-ammo-list');
+  if(!ammos.length){el.innerHTML='<div class="empty" style="padding:8px 0;">No ammo saved yet.</div>';return;}
+  el.innerHTML=ammos.map(function(a){
+    var detail=[a.shot,a.oz?a.oz+'oz':'',a.fps?a.fps+'fps':''].filter(Boolean).join(' · ');
+    return'<div class="eq-item"><div><div class="eq-item-name">'+a.make+(a.model?' '+a.model:'')+'</div><div class="eq-item-detail">'+detail+'</div></div>'
+      +'<button class="eq-del" onclick="delAmmo('+a.id+')">🗑</button></div>';
+  }).join('');
+}
+function delAmmo(id){if(!confirm('Delete ammo?'))return;sv('eq_ammos',getAmmos().filter(function(a){return a.id!==id;}));renderSavedAmmos();buildLogDropdowns();}
+
+/* ── LOG DROPDOWNS ── */
+function chokeSelectHTML(id,labelText){
+  return'<div class="fr"><label>'+labelText+'</label>'
+    +'<select class="log-dd" id="'+id+'">'
+    +CHOKES.map(function(c){return'<option>'+c+'</option>';}).join('')
+    +'</select></div>';
+}
+
+function buildLogDropdowns(){
+  var guns=getGuns();
+  var gSel=document.getElementById('log-gun-sel');
+  var prevGun=gSel.value;
+  gSel.innerHTML='<option value="">— Select gun —</option>';
+  guns.forEach(function(g){
+    var opt=document.createElement('option');
+    opt.value=g.id;
+    opt.textContent=g.model+' ('+(g.type==='ou'?'O/U':'SA')+')';
+    gSel.appendChild(opt);
+  });
+  if(prevGun)gSel.value=prevGun;
+  onLogGunChange();
+
+  var ammos=getAmmos();
+  var aSel=document.getElementById('log-ammo-sel');
+  var prevAmmo=aSel.value;
+  aSel.innerHTML='<option value="">— Select ammo —</option>';
+  ammos.forEach(function(a){
+    var opt=document.createElement('option');
+    opt.value=a.id;
+    opt.textContent=a.make+(a.model?' '+a.model:'')+' '+a.shot;
+    aSel.appendChild(opt);
+  });
+  if(prevAmmo)aSel.value=prevAmmo;
+}
+
+function onLogGunChange(){
+  var id=parseInt(document.getElementById('log-gun-sel').value)||0;
+  var area=document.getElementById('log-choke-area');
+  area.innerHTML='';
+  if(!id)return;
+  var gun=getGuns().find(function(g){return g.id===id;});
+  if(!gun)return;
+  if(gun.type==='ou'){
+    area.innerHTML='<div class="g2">'
+      +chokeSelectHTML('log-choke-top','Top Barrel Choke')
+      +chokeSelectHTML('log-choke-bot','Bottom Barrel Choke')
+      +'</div>';
+  } else {
+    area.innerHTML=chokeSelectHTML('log-choke-sa','Choke');
+  }
+}
+
+function getSelectedChoke(){
+  var id=parseInt(document.getElementById('log-gun-sel').value)||0;
+  if(!id)return'';
+  var gun=getGuns().find(function(g){return g.id===id;});
+  if(!gun)return'';
+  if(gun.type==='ou'){
+    var top=document.getElementById('log-choke-top');
+    var bot=document.getElementById('log-choke-bot');
+    return(top?top.value:'')+'/'+(bot?bot.value:'');
+  } else {
+    var sa=document.getElementById('log-choke-sa');
+    return sa?sa.value:'';
+  }
+}
+
+/* ── DUCK DRAWING ── */
+/* Draw a mallard duck on a canvas. dir: 1=facing right (sitting), -1=facing left */
+function drawMallard(canvas, flying){
+  var W=canvas.width, H=canvas.height;
+  var ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  if(!flying){
+    /* Sitting mallard facing right */
+    ctx.save();
+    /* Body */
+    ctx.beginPath();ctx.ellipse(W*0.45,H*0.62,W*0.30,H*0.22,0.15,0,Math.PI*2);
+    ctx.fillStyle='#7B5A1E';ctx.fill();
+    /* Wing highlight */
+    ctx.beginPath();ctx.ellipse(W*0.42,H*0.58,W*0.22,H*0.14,0.1,0,Math.PI*2);
+    ctx.fillStyle='#9B7A2E';ctx.fill();
+    /* Wing edge stripe */
+    ctx.beginPath();ctx.ellipse(W*0.38,H*0.72,W*0.14,H*0.05,-0.1,0,Math.PI*2);
+    ctx.fillStyle='#4A90D9';ctx.fill();
+    /* Neck */
+    ctx.beginPath();ctx.ellipse(W*0.68,H*0.50,W*0.10,H*0.16,0.3,0,Math.PI*2);
+    ctx.fillStyle='#2A6E2A';ctx.fill();
+    /* White collar */
+    ctx.beginPath();ctx.ellipse(W*0.67,H*0.63,W*0.10,H*0.05,0.3,0,Math.PI*2);
+    ctx.fillStyle='#FFFFFF';ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;
+    /* Head */
+    ctx.beginPath();ctx.ellipse(W*0.76,H*0.35,W*0.13,H*0.12,0.1,0,Math.PI*2);
+    ctx.fillStyle='#1A5C1A';ctx.fill();
+    /* Bill */
+    ctx.beginPath();ctx.moveTo(W*0.87,H*0.33);ctx.lineTo(W*0.98,H*0.30);ctx.lineTo(W*0.98,H*0.38);ctx.closePath();
+    ctx.fillStyle='#D4A017';ctx.fill();
+    /* Eye */
+    ctx.beginPath();ctx.arc(W*0.80,H*0.30,W*0.025,0,Math.PI*2);ctx.fillStyle='#1A1A18';ctx.fill();
+    ctx.beginPath();ctx.arc(W*0.81,H*0.28,W*0.01,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+    /* Tail */
+    ctx.beginPath();ctx.moveTo(W*0.16,H*0.58);ctx.lineTo(W*0.04,H*0.46);ctx.lineTo(W*0.10,H*0.68);ctx.closePath();
+    ctx.fillStyle='#5A4010';ctx.fill();
+    /* Feet */
+    ctx.strokeStyle='#D4A017';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(W*0.40,H*0.83);ctx.lineTo(W*0.34,H*0.95);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W*0.34,H*0.95);ctx.lineTo(W*0.24,H*0.95);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W*0.50,H*0.83);ctx.lineTo(W*0.44,H*0.95);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(W*0.44,H*0.95);ctx.lineTo(W*0.34,H*0.95);ctx.stroke();
+    ctx.restore();
+  } else {
+    /* Flying mallard — wings spread, banking up-right */
+    ctx.save();
+    /* Body */
+    ctx.beginPath();ctx.ellipse(W*0.48,H*0.52,W*0.26,H*0.14,-.25,0,Math.PI*2);
+    ctx.fillStyle='#7B5A1E';ctx.fill();
+    /* Left wing (down) */
+    ctx.beginPath();ctx.moveTo(W*0.38,H*0.48);ctx.quadraticCurveTo(W*0.18,H*0.72,W*0.06,H*0.64);ctx.quadraticCurveTo(W*0.20,H*0.44,W*0.38,H*0.48);
+    ctx.fillStyle='#5A4010';ctx.fill();
+    /* Right wing (up) */
+    ctx.beginPath();ctx.moveTo(W*0.58,H*0.48);ctx.quadraticCurveTo(W*0.78,H*0.20,W*0.92,H*0.28);ctx.quadraticCurveTo(W*0.76,H*0.46,W*0.58,H*0.48);
+    ctx.fillStyle='#5A4010';ctx.fill();
+    /* Neck */
+    ctx.beginPath();ctx.ellipse(W*0.68,H*0.40,W*0.09,H*0.14,-.4,0,Math.PI*2);
+    ctx.fillStyle='#2A6E2A';ctx.fill();
+    /* White collar */
+    ctx.beginPath();ctx.ellipse(W*0.67,H*0.52,W*0.09,H*0.04,-.2,0,Math.PI*2);
+    ctx.fillStyle='#FFFFFF';ctx.globalAlpha=0.85;ctx.fill();ctx.globalAlpha=1;
+    /* Head */
+    ctx.beginPath();ctx.ellipse(W*0.76,H*0.28,W*0.12,H*0.11,-.3,0,Math.PI*2);
+    ctx.fillStyle='#1A5C1A';ctx.fill();
+    /* Bill */
+    ctx.beginPath();ctx.moveTo(W*0.86,H*0.22);ctx.lineTo(W*0.98,H*0.16);ctx.lineTo(W*0.98,H*0.26);ctx.closePath();
+    ctx.fillStyle='#D4A017';ctx.fill();
+    /* Eye */
+    ctx.beginPath();ctx.arc(W*0.80,H*0.22,W*0.022,0,Math.PI*2);ctx.fillStyle='#1A1A18';ctx.fill();
+    ctx.restore();
+  }
+}
+
+function makeDuckCanvas(flying, w, h){
+  var c=document.createElement('canvas');
+  c.width=w||80;c.height=h||70;
+  c.className=flying?'':'duck-canvas';
+  drawMallard(c,flying);
+  return c;
+}
+
+/* ── SVGs ── */
+function svgWhole(fill,stroke){
+  fill=fill||'#D85A30';stroke=stroke||'#7a2e12';
+  return'<svg class="clay-svg" width="70" height="46" viewBox="0 0 80 52">'
+    +'<ellipse cx="40" cy="34" rx="34" ry="14" fill="'+fill+'" stroke="'+stroke+'" stroke-width="1.5"/>'
+    +'<ellipse cx="40" cy="28" rx="26" ry="9" fill="none" stroke="rgba(255,255,255,0.28)" stroke-width="1.2"/>'
+    +'<ellipse cx="40" cy="23" rx="17" ry="6" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="0.8"/>'
+    +'</svg>';
+}
+function svgBroken(){
+  return'<svg class="clay-svg" width="70" height="70" viewBox="0 0 90 90">'
+    +'<polygon points="45,42 16,20 11,37 29,50" fill="#D85A30" stroke="#7a2e12" stroke-width="0.8"/>'
+    +'<polygon points="45,42 64,13 75,28 59,46" fill="#E07040" stroke="#7a2e12" stroke-width="0.8"/>'
+    +'<polygon points="45,42 72,60 57,72 37,59" fill="#D85A30" stroke="#7a2e12" stroke-width="0.8"/>'
+    +'<polygon points="45,42 20,64 12,51 28,37" fill="#C04820" stroke="#7a2e12" stroke-width="0.8"/>'
+    +'<polygon points="45,42 50,14 63,10 56,30" fill="#E07040" stroke="#7a2e12" stroke-width="0.8"/>'
+    +'<line x1="45" y1="42" x2="8" y2="38" stroke="#ddd" stroke-width="0.7"/>'
+    +'<line x1="45" y1="42" x2="12" y2="25" stroke="#ddd" stroke-width="0.6"/>'
+    +'<circle cx="20" cy="8" r="2" fill="none" stroke="#bbb" stroke-width="0.7"/>'
+    +'<rect x="12" y="56" width="5" height="5" rx="1" fill="#D85A30" stroke="#7a2e12" stroke-width="0.4" transform="rotate(20,14,58)"/>'
+    +'</svg>';
+}
+
+function makeOptIcon(){
+  var img=document.createElement('img');
+  img.src=OPT_IMG;
+  img.style.cssText='width:52px;height:52px;object-fit:contain;pointer-events:none;filter:brightness(0);';
+  return img;
+}
+
+/* ── SEQUENCE ── */
+function buildSeq(d){
+  var s=[];
+  if(d==='sc'){
+    for(var i=1;i<=8;i++){
+      var n=(i===4)?3:(i===8)?1:2;
+      for(var j=0;j<n;j++) s.push({kind:'single',stn:i,lbl:'Station '+i,sub:'Clay '+(j+1),house:null});
+    }
+  } else {
+    [1,2].forEach(function(st){
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'High house',house:'H'});
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'Low house',house:'L'});
+      s.push({kind:'pair',stn:st,lbl:'Station '+st,sub:'High / Low pair',first:'H',second:'L'});
+    });
+    [3,4,5].forEach(function(st){
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'High house',house:'H'});
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'Low house',house:'L'});
+    });
+    [6,7].forEach(function(st){
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'High house',house:'H'});
+      s.push({kind:'single',stn:st,lbl:'Station '+st,sub:'Low house',house:'L'});
+      s.push({kind:'pair',stn:st,lbl:'Station '+st,sub:'Low / High pair',first:'L',second:'H'});
+    });
+    s.push({kind:'single',stn:8,lbl:'Station 8',sub:'High house',house:'H'});
+    s.push({kind:'single',stn:8,lbl:'Station 8',sub:'Low house',house:'L'});
+    /* 25th bird — auto-miss if opt already used, otherwise show as option opportunity */
+    s.push({kind:'twentyfifth',stn:8,lbl:'25th Bird',sub:'Station 8 — Low house',house:'L'});
+  }
+  return s;
+}
+
+/* ── SHOOT ── */
+function startShoot(){
+  /* Branch: Sporting Clays uses station-by-station machine flow */
+  if(disc==='sc'){scBeginRound();return;}
+  var gunId=parseInt(document.getElementById('log-gun-sel').value)||0;
+  var ammoId=parseInt(document.getElementById('log-ammo-sel').value)||0;
+  var gun=getGuns().find(function(g){return g.id===gunId;});
+  var ammo=getAmmos().find(function(a){return a.id===ammoId;});
+  var choke=getSelectedChoke();
+  pending={
+    disc:disc,date:document.getElementById('date-in').value||TODAY,
+    gun:gun?gun.model:'',
+    gunType:gun?gun.type:'',
+    choke:choke,
+    ammo:ammo?(ammo.make+(ammo.model?' '+ammo.model:'')+' '+ammo.shot):'',
+    ammoFps:ammo?ammo.fps:'',
+    temp:document.getElementById('temp-in').value,
+    wind:document.getElementById('wind-in').value,
+    weather:document.getElementById('wx-in').value,
+    light:document.getElementById('lt-in').value,
+    notes:document.getElementById('notes-in').value.trim(),
+    results:[]
+  };
+  seq=buildSeq(disc);idx=0;hits=0;optUsed=false;
+  goPg('shoot');renderStep();
+}
+
+function renderStep(){
+  if(idx>=seq.length){showFinish();return;}
+  var t=seq[idx];
+  document.getElementById('sh-title').textContent=t.lbl+' — '+t.sub;
+  document.getElementById('sh-sub').textContent=hits+' hit so far';
+  document.getElementById('pfill').style.width=Math.round(idx/seq.length*100)+'%';
+  document.getElementById('action-btns').innerHTML='';
+  var area=document.getElementById('tgt-area');area.innerHTML='';
+  if(t.kind==='pair')renderPair(t,area);
+  else if(t.kind==='twentyfifth')renderTwentyFifth(t,area);
+  else renderSingle(t,area);
+}
+
+/* ── SINGLE ── */
+function renderSingle(t,area){
+  var isSkeet=(pending.disc==='am'||pending.disc==='is');
+  var wrap=document.createElement('div');wrap.className='single-layout';
+  var hitBtn=makeTBtn(null,'Hit','Tap to mark hit','top-btn');
+  var clayDiv=document.createElement('div');clayDiv.innerHTML=svgWhole();
+  hitBtn.insertBefore(clayDiv.firstChild,hitBtn.firstChild);
+  wrap.appendChild(hitBtn);
+
+  var botRow=document.createElement('div');botRow.className='bot-row';
+  var optBtn=null;
+  if(isSkeet&&!optUsed){
+    optBtn=makeTBtn(null,'Option','Use your option bird','opt-s');
+    optBtn.insertBefore(makeOptIcon(),optBtn.firstChild);
+    botRow.appendChild(optBtn);
+  }
+  var missBtn=makeTBtn(null,'Miss','','');
+  missBtn.style.background='var(--bg)';
+  missBtn.appendChild(makeDuckCanvas(false,80,70));
+  botRow.appendChild(missBtn);
+  wrap.appendChild(botRow);area.appendChild(wrap);
+
+  hitBtn.addEventListener('click',function(){scoreSingle(true,false,t,hitBtn,optBtn?[missBtn,optBtn]:[missBtn]);});
+  if(optBtn){optBtn.addEventListener('click',function(){scoreSingle(true,true,t,optBtn,[hitBtn,missBtn]);});}
+  missBtn.addEventListener('click',function(){flyDuckAndScore(missBtn,t,optBtn?[hitBtn,optBtn]:[hitBtn]);});
+}
+
+/* 25th bird: auto-miss if optUsed, else show as single no-option */
+function renderTwentyFifth(t,area){
+  if(optUsed){
+    pending.results.push({stn:8,house:'L',kind:'single',hit:false,opt:false,auto:true});
+    setTimeout(advance,80);
+    return;
+  }
+  var wrap=document.createElement('div');wrap.className='single-layout';
+  var hitBtn=makeTBtn(null,'Option Bird','Tap to mark hit','top-btn');
+  var clayDiv=document.createElement('div');clayDiv.innerHTML=svgWhole();
+  hitBtn.insertBefore(clayDiv.firstChild,hitBtn.firstChild);
+  wrap.appendChild(hitBtn);
+  var botRow=document.createElement('div');botRow.className='bot-row';
+  var missBtn=makeTBtn(null,'Miss','','');
+  missBtn.style.background='var(--bg)';
+  missBtn.appendChild(makeDuckCanvas(false,80,70));
+  botRow.appendChild(missBtn);
+  wrap.appendChild(botRow);area.appendChild(wrap);
+  hitBtn.addEventListener('click',function(){optUsed=true;scoreSingle(true,true,t,hitBtn,[missBtn]);});
+  missBtn.addEventListener('click',function(){flyDuckAndScore(missBtn,t,[hitBtn]);});
+}
+
+function makeTBtn(html,lbl,sub,extraClass){
+  var btn=document.createElement('button');
+  btn.className='tbtn'+(extraClass?' '+extraClass:'');
+  if(html){var d=document.createElement('div');d.innerHTML=html;btn.appendChild(d.firstChild);}
+  var l=document.createElement('div');l.className='tbtn-label';l.textContent=lbl;
+  var s=document.createElement('div');s.className='tbtn-sub';s.textContent=sub;
+  btn.appendChild(l);btn.appendChild(s);return btn;
+}
+
+function flyDuckAndScore(btn,t,others){
+  vib(15);
+  if(others)others.forEach(function(b){if(b)b.classList.add('disabled');});
+  btn.style.pointerEvents='none';
+  /* hide static duck, show flying duck */
+  var staticC=btn.querySelector('canvas');
+  if(staticC){
+    staticC.style.opacity='0';
+    var flyC=makeDuckCanvas(true,80,70);
+    flyC.className='duck-flying';
+    flyC.style.cssText='position:absolute;animation:duckFlyAway 0.72s cubic-bezier(0.4,0,1,1) forwards;pointer-events:none;';
+    btn.appendChild(flyC);
+    setTimeout(function(){if(flyC.parentNode)flyC.parentNode.removeChild(flyC);},800);
+  }
+  btn.classList.add('miss-s');
+  var r=document.createElement('div');r.className='tbtn-res';r.textContent='Miss';btn.appendChild(r);
+  setTimeout(function(){
+    pending.results.push({stn:t.stn,house:t.house,kind:t.kind==='twentyfifth'?'single':t.kind,hit:false,opt:false});
+    advance();
+  },720);
+}
+
+function scoreSingle(hit,isOpt,t,active,others){
+  vib(hit?[20,10,30]:15);
+  active.style.pointerEvents='none';
+  if(others)others.forEach(function(b){if(b)b.classList.add('disabled');});
+  active.classList.add(hit?'hit-s':'miss-s');
+  var svg=active.querySelector('.clay-svg');if(svg&&hit)svg.outerHTML=svgBroken();
+  var r=document.createElement('div');r.className='tbtn-res';
+  r.textContent=hit?(isOpt?'Hit (option)':'Hit!'):'Miss';active.appendChild(r);
+  if(isOpt)optUsed=true;
+  pending.results.push({stn:t.stn,house:t.house,kind:t.kind==='twentyfifth'?'single':t.kind,hit:hit,opt:isOpt||false});
+  if(hit)hits++;
+  setTimeout(advance,600);
+}
+
+/* ── PAIR ── */
+function renderPair(t,area){
+  var grid=document.createElement('div');grid.className='pair-layout';
+  var fH=t.first,sH=t.second;
+  var fCol=fH==='H'?'#D85A30':'#C04820',sCol=sH==='H'?'#D85A30':'#C04820';
+  var fStr=fH==='H'?'#7a2e12':'#5a1e08',sStr=sH==='H'?'#7a2e12':'#5a1e08';
+  var fName=(fH==='H'?'High':'Low')+' house',sName=(sH==='H'?'High':'Low')+' house';
+
+  function makePairBtn(clayHTML,lbl,isMiss){
+    var btn=document.createElement('button');btn.className='tbtn';
+    if(isMiss){
+      btn.style.background='var(--bg)';
+      btn.appendChild(makeDuckCanvas(false,70,60));
+    } else {
+      var d=document.createElement('div');d.innerHTML=clayHTML;btn.appendChild(d.firstChild);
+    }
+    var l=document.createElement('div');l.className='tbtn-label';l.textContent=lbl;
+    var s=document.createElement('div');s.className='tbtn-sub';s.textContent=isMiss?'Miss':'Hit';
+    btn.appendChild(l);btn.appendChild(s);return btn;
+  }
+
+  var b1H=makePairBtn(svgWhole(fCol,fStr),fName,false);
+  var b1M=makePairBtn(null,fName,true);
+  var b2H=makePairBtn(svgWhole(sCol,sStr),sName,false);
+  var b2M=makePairBtn(null,sName,true);
+  grid.appendChild(b1H);grid.appendChild(b1M);grid.appendChild(b2H);grid.appendChild(b2M);
+  area.appendChild(grid);
+
+  var res={};res[fH]=null;res[sH]=null;var done=false;
+  function finishPair(){
+    if(done)return;done=true;
+    pending.results.push({stn:t.stn,house:fH,kind:'pair',hit:res[fH]});
+    pending.results.push({stn:t.stn,house:sH,kind:'pair',hit:res[sH]});
+    if(res[fH])hits++;if(res[sH])hits++;
+    setTimeout(advance,600);
+  }
+  function scorePH(house,hit,btn,other){
+    if(done)return;
+    vib(hit?[20,10,30]:15);
+    btn.style.pointerEvents='none';other.classList.add('disabled');
+    btn.classList.add(hit?'hit-s':'miss-s');
+    var svg=btn.querySelector('.clay-svg');if(svg&&hit)svg.outerHTML=svgBroken();
+    var r=document.createElement('div');r.className='tbtn-res';r.textContent=hit?'Hit!':'Miss';btn.appendChild(r);
+    res[house]=hit;
+    var otherH=house===fH?sH:fH;if(res[otherH]!==null)finishPair();
+  }
+  function missPH(house,btn,other){
+    if(done)return;
+    vib(15);btn.style.pointerEvents='none';other.classList.add('disabled');
+    btn.classList.add('miss-s');
+    var sc=btn.querySelector('canvas');
+    if(sc){
+      sc.style.opacity='0';
+      var fc=makeDuckCanvas(true,70,60);
+      fc.style.cssText='position:absolute;animation:duckFlyAway 0.72s cubic-bezier(0.4,0,1,1) forwards;pointer-events:none;';
+      btn.appendChild(fc);
+      setTimeout(function(){if(fc.parentNode)fc.parentNode.removeChild(fc);},800);
+    }
+    var r=document.createElement('div');r.className='tbtn-res';r.textContent='Miss';btn.appendChild(r);
+    setTimeout(function(){res[house]=false;var otherH=house===fH?sH:fH;if(res[otherH]!==null)finishPair();},720);
+  }
+  b1H.addEventListener('click',function(){scorePH(fH,true,b1H,b1M);});
+  b1M.addEventListener('click',function(){missPH(fH,b1M,b1H);});
+  b2H.addEventListener('click',function(){scorePH(sH,true,b2H,b2M);});
+  b2M.addEventListener('click',function(){missPH(sH,b2M,b2H);});
+}
+
+function advance(){idx++;renderStep();}
+
+/* ── FANFARE ── */
+function showFanfare(score,total){
+  var ov=document.getElementById('fanfare');
+  document.getElementById('fanfare-num').textContent=score;
+  document.getElementById('fanfare-label').textContent=score===total?'PERFECT ROUND!':score+' STRAIGHT!';
+  document.getElementById('fanfare-sub').textContent=score+'/'+total+' · 100%';
+  ov.style.display='flex';
+  var cols=['#FFD700','#FF6B35','#4CAF50','#2196F3','#E91E63','#9C27B0'];
+  for(var i=0;i<40;i++){(function(){
+    var p=document.createElement('div');p.className='confetti-piece';
+    p.style.left=Math.random()*100+'%';p.style.top='-10px';
+    p.style.background=cols[Math.floor(Math.random()*cols.length)];
+    p.style.animationDuration=(0.8+Math.random()*1.2)+'s';
+    p.style.animationDelay=(Math.random()*0.5)+'s';
+    p.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    ov.appendChild(p);
+    setTimeout(function(){if(p.parentNode)p.parentNode.removeChild(p);},2500);
+  })();}
+  vib([50,30,50,30,100]);
+}
+function closeFanfare(){document.getElementById('fanfare').style.display='none';}
+
+/* ── FINISH ── */
+function showFinish(){
+  document.getElementById('pfill').style.width='100%';
+  document.getElementById('sh-title').textContent='Round complete!';
+  document.getElementById('sh-sub').textContent='';
+  var total=pending.results.length;
+  var scored=pending.results.filter(function(r){return r.hit;}).length;
+  var pct=total>0?Math.round(scored/total*100):0;
+  var area=document.getElementById('tgt-area');
+  area.innerHTML='<div class="finish"><div class="finish-score">'+scored+'/'+total+'</div><div class="finish-pct">'+pct+'%</div><div class="finish-disc">'+DNAMES[pending.disc]+'</div></div>';
+  var ab=document.getElementById('action-btns');
+  var sb=document.createElement('button');sb.className='save-btn';sb.textContent='Save Round';
+  sb.addEventListener('click',saveRound);ab.appendChild(sb);
+  if(scored>0&&scored===total&&scored%25===0)setTimeout(function(){showFanfare(scored,total);},400);
+}
+
+function saveRound(){
+  var total=pending.results.length;
+  var scored=pending.results.filter(function(r){return r.hit;}).length;
+  var rounds=getRounds();
+  rounds.push({
+    id:Date.now(),disc:pending.disc,date:pending.date,
+    gun:pending.gun,gunType:pending.gunType,choke:pending.choke,ammo:pending.ammo,
+    temp:pending.temp,wind:pending.wind,weather:pending.weather,
+    light:pending.light,notes:pending.notes,
+    score:scored,max:total,pct:total>0?Math.round(scored/total*100):0,
+    results:pending.results.slice()
+  });
+  sv('csv8',rounds);vib([30,20,60]);closeFanfare();goPg('history');
+}
+
+/* ── WEATHER ── */
+function fetchWx(){
+  var btn=document.getElementById('wx-txt');btn.textContent='Locating...';
+  if(!navigator.geolocation){btn.textContent='GPS not available';return;}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    btn.textContent='Fetching...';
+    fetch('https://api.open-meteo.com/v1/forecast?latitude='+pos.coords.latitude+'&longitude='+pos.coords.longitude+'&current=temperature_2m,wind_speed_10m,weather_code&wind_speed_unit=kmh&timezone=auto')
+    .then(function(r){return r.json();})
+    .then(function(d){
+      var c=d.current,temp=Math.round(c.temperature_2m),wind=Math.round(c.wind_speed_10m),wl=wxCode(c.weather_code);
+      document.getElementById('temp-in').value=temp;
+      document.getElementById('wind-in').value=wind;
+      var s=document.getElementById('wx-in');
+      for(var i=0;i<s.options.length;i++)if(s.options[i].text===wl){s.value=s.options[i].value;break;}
+      var wr=document.getElementById('wx-res');wr.style.display='block';wr.textContent=wl+' · '+temp+'°C · Wind '+wind+' km/h';
+      btn.textContent='Weather imported ✓';
+    }).catch(function(){btn.textContent='Could not fetch weather';});
+  },function(){btn.textContent='Location access denied';});
+}
+function wxCode(c){if(c<=1)return'Sunny';if(c<=3)return'Partly cloudy';if(c<=48)return'Overcast';if(c<=67)return'Light rain';return'Heavy rain';}
+
+/* ── HISTORY ── */
+function filtH(f,btn){
+  hFilt=f;
+  document.querySelectorAll('#hist-tabs .ftab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');renderHistory();
+}
+function renderHistory(){
+  var rounds=getRounds().filter(function(r){return hFilt==='all'||r.disc===hFilt;}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  document.getElementById('h-n').textContent=rounds.length;
+  var el=document.getElementById('h-list');
+  if(!rounds.length){el.innerHTML='<div class="empty">No rounds yet.</div>';document.getElementById('h-avg').textContent='—';document.getElementById('h-best').textContent='—';return;}
+  var pcts=rounds.map(function(r){return r.pct;});
+  document.getElementById('h-avg').textContent=Math.round(pcts.reduce(function(a,b){return a+b;},0)/pcts.length)+'%';
+  document.getElementById('h-best').textContent=Math.max.apply(null,pcts)+'%';
+  el.innerHTML=rounds.map(function(r){
+    var meta=[r.gun,r.choke,r.weather,r.temp?r.temp+'°C':''].filter(Boolean).join(' · ');
+    var chips='';
+    if(r.results&&r.results.length){
+      var byStn={};
+      r.results.forEach(function(res){
+        var k='S'+res.stn+(res.kind==='pair'?'p':'s');
+        if(!byStn[k])byStn[k]={lbl:'S'+res.stn+(res.kind==='pair'?' pair':''),hit:0,total:0};
+        byStn[k].total++;if(res.hit)byStn[k].hit++;
+      });
+      chips='<div class="stn-chips">'+Object.values(byStn).map(function(p){
+        var pct2=p.total>0?Math.round(p.hit/p.total*100):0;
+        var cls=pct2>=80?'good':pct2>=50?'ok':'bad';
+        return'<span class="chip '+cls+'">'+p.lbl+' '+p.hit+'/'+p.total+'</span>';
+      }).join('')+'</div>';
+    }
+    return'<div class="hi"><div class="hi-top"><div>'
+      +'<div class="hi-disc">'+DNAMES[r.disc]+'</div>'
+      +'<div><span class="hi-score">'+r.score+'/'+r.max+'</span><span class="hi-pct"> '+r.pct+'%</span></div>'
+      +'</div><button class="del-btn" onclick="delRound('+r.id+')">🗑</button></div>'
+      +'<div class="hi-meta">'+r.date+(meta?' · '+meta:'')+'</div>'
+      +(r.notes?'<div class="hi-notes">"'+r.notes+'"</div>':'')+chips+'</div>';
+  }).join('');
+}
+function delRound(id){if(!confirm('Delete?'))return;sv('csv8',getRounds().filter(function(r){return r.id!==id;}));renderHistory();}
+
+/* ── ANALYTICS STATE ── */
+var statDisc='all';
+var statDatePreset='all';
+var statSplit='none';
+var statDateFrom='';
+var statDateTo='';
+var statMainChart=null;
+var statStnChart=null;
+var SERIES_COLORS=['#1E5FAD','#D85A30','#1D7A4E','#9C27B0','#FF6B35','#E91E63','#795548','#607D8B'];
+
+function statSetDisc(d,btn){
+  statDisc=d;
+  document.querySelectorAll('#stats-disc-tabs .dtab').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  statApplyFilters();
+}
+function statSetDatePreset(p,btn){
+  statDatePreset=p;
+  document.querySelectorAll('#date-preset-btns .sf-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  var row=document.getElementById('custom-date-row');
+  if(row)row.style.display=(p==='custom')?'block':'none';
+  statApplyFilters();
+}
+function statSetSplit(s,btn){
+  statSplit=s;
+  document.querySelectorAll('#split-dim-btns .sf-btn').forEach(function(b){b.classList.remove('on');});
+  btn.classList.add('on');
+  statApplyFilters();
+}
+
+function getFilteredRounds(){
+  var rounds=getRounds();
+  /* Discipline filter */
+  if(statDisc!=='all') rounds=rounds.filter(function(r){return r.disc===statDisc;});
+  /* Date filter */
+  var now=new Date(); var from=null,to=null;
+  if(statDatePreset==='30'){from=new Date(now);from.setDate(from.getDate()-30);}
+  else if(statDatePreset==='90'){from=new Date(now);from.setDate(from.getDate()-90);}
+  else if(statDatePreset==='ytd'){from=new Date(now.getFullYear(),0,1);}
+  else if(statDatePreset==='custom'){
+    var df=document.getElementById('stat-date-from');var dt=document.getElementById('stat-date-to');
+    if(df&&df.value)from=new Date(df.value);
+    if(dt&&dt.value)to=new Date(dt.value);
+  }
+  if(from)rounds=rounds.filter(function(r){return new Date(r.date)>=from;});
+  if(to)rounds=rounds.filter(function(r){return new Date(r.date)<=to;});
+  return rounds.sort(function(a,b){return a.date.localeCompare(b.date);});
+}
+
+function statApplyFilters(){
+  var rounds=getFilteredRounds();
+  renderStatKPIs(rounds);
+  renderStatMainChart(rounds);
+  renderStatStnChart(rounds);
+  renderStatLog(rounds);
+}
+
+/* ── KPIs ── */
+function renderStatKPIs(rounds){
+  var el=document.getElementById('stats-kpis');
+  if(!rounds.length){el.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:12px;padding:10px 0;">No rounds match filters</div>';return;}
+  var pcts=rounds.map(function(r){return r.pct;});
+  var avg=Math.round(pcts.reduce(function(a,b){return a+b;},0)/pcts.length);
+  var best=Math.max.apply(null,pcts);
+  var trend='—';
+  if(pcts.length>=2){
+    var half=Math.floor(pcts.length/2);
+    var r1=Math.round(pcts.slice(0,half).reduce(function(a,b){return a+b;},0)/half);
+    var r2=Math.round(pcts.slice(half).reduce(function(a,b){return a+b;},0)/(pcts.length-half));
+    var diff=r2-r1;
+    trend=(diff>0?'↑ ':diff<0?'↓ ':'')+Math.abs(diff)+'%';
+  }
+  el.innerHTML='<div class="stat"><div class="stat-v">'+rounds.length+'</div><div class="stat-l">Rounds</div></div>'
+    +'<div class="stat"><div class="stat-v">'+avg+'%</div><div class="stat-l">Avg</div></div>'
+    +'<div class="stat"><div class="stat-v">'+best+'%</div><div class="stat-l">Best</div></div>';
+}
+
+/* ── MAIN CHART ── */
+function renderStatMainChart(rounds){
+  if(statMainChart){statMainChart.destroy();statMainChart=null;}
+  var cv=document.getElementById('stats-main-chart');if(!cv)return;
+  var dk=matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc=dk?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)',tc=dk?'#666':'#999';
+  var baseOpts={responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:statSplit!=='none',labels:{color:tc,font:{size:10}}}},
+    scales:{y:{min:0,max:100,ticks:{color:tc,callback:function(v){return v+'%';}},grid:{color:gc}},
+      x:{ticks:{color:tc,autoSkip:true,maxTicksLimit:8},grid:{color:gc}}}};
+
+  if(!rounds.length){
+    var titleEl=document.getElementById('stats-chart-title');
+    if(titleEl)titleEl.textContent='Score % Over Time';
+    statMainChart=new Chart(cv,{type:'line',data:{labels:[],datasets:[]},options:baseOpts});
+    return;
+  }
+
+  if(statSplit==='none'){
+    /* Single line: score % over time */
+    var titleEl=document.getElementById('stats-chart-title');
+    if(titleEl)titleEl.textContent='Score % Over Time';
+    var labels=rounds.map(function(r){return r.date.slice(5);});
+    var data=rounds.map(function(r){return r.pct;});
+    statMainChart=new Chart(cv,{type:'line',data:{labels:labels,datasets:[{
+      label:'Score %',data:data,borderColor:'#1E5FAD',backgroundColor:'rgba(30,95,173,0.08)',
+      fill:true,tension:0.3,pointRadius:4,pointBackgroundColor:'#1E5FAD'
+    }]},options:baseOpts});
+  } else {
+    /* Multi-series: one line per split value */
+    var titleEl=document.getElementById('stats-chart-title');
+    var splitLabel={gun:'Gun',choke:'Choke',ammo:'Ammo',weather:'Weather'}[statSplit]||statSplit;
+    if(titleEl)titleEl.textContent='Score % by '+splitLabel+' Over Time';
+    /* Collect all unique dates and split keys */
+    var splitVals={};
+    rounds.forEach(function(r){var k=r[statSplit]||'Unknown';if(!splitVals[k])splitVals[k]=[];splitVals[k].push(r);});
+    var allDates=[];
+    var seen={};
+    rounds.forEach(function(r){if(!seen[r.date]){seen[r.date]=true;allDates.push(r.date);}});
+    allDates.sort();
+    var labels=allDates.map(function(d){return d.slice(5);});
+    var datasets=[];
+    var ci=0;
+    Object.keys(splitVals).forEach(function(key){
+      var col=SERIES_COLORS[ci%SERIES_COLORS.length];ci++;
+      /* For each date, find avg pct for this split value */
+      var data=allDates.map(function(date){
+        var matches=splitVals[key].filter(function(r){return r.date===date;});
+        if(!matches.length)return null;
+        return Math.round(matches.reduce(function(s,r){return s+r.pct;},0)/matches.length);
+      });
+      datasets.push({
+        label:key,data:data,borderColor:col,backgroundColor:col+'22',
+        fill:false,tension:0.3,pointRadius:4,pointBackgroundColor:col,
+        spanGaps:true
+      });
+    });
+    statMainChart=new Chart(cv,{type:'line',data:{labels:labels,datasets:datasets},options:baseOpts});
+  }
+}
+
+/* ── STATION CHART ── */
+function renderStatStnChart(rounds){
+  if(statStnChart){statStnChart.destroy();statStnChart=null;}
+  var cv=document.getElementById('stats-stn-chart');if(!cv)return;
+  var dk=matchMedia('(prefers-color-scheme: dark)').matches;
+  var gc=dk?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.05)',tc=dk?'#666':'#999';
+  var byStn={};
+  rounds.forEach(function(r){
+    if(!r.results)return;
+    r.results.forEach(function(res){
+      var k='S'+res.stn+(res.kind==='pair'?'p':'');
+      if(!byStn[k])byStn[k]={hit:0,total:0};
+      byStn[k].total++;if(res.hit)byStn[k].hit++;
+    });
+  });
+  var stns=Object.keys(byStn).sort();
+  if(!stns.length)return;
+  var labels=stns;
+  var data=stns.map(function(k){return byStn[k].total>0?Math.round(byStn[k].hit/byStn[k].total*100):0;});
+  var bgColors=data.map(function(v){return v>=80?'rgba(29,122,78,0.7)':v>=50?'rgba(122,78,10,0.7)':'rgba(163,45,45,0.7)';});
+  statStnChart=new Chart(cv,{type:'bar',data:{labels:labels,datasets:[{
+    data:data,backgroundColor:bgColors,borderRadius:5,borderSkipped:false
+  }]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{min:0,max:100,ticks:{color:tc,callback:function(v){return v+'%';}},grid:{color:gc}},
+      x:{ticks:{color:tc},grid:{color:gc}}}}});
+}
+
+/* ── RAW LOG ── */
+function renderStatLog(rounds){
+  var el=document.getElementById('stats-log-list');
+  if(!rounds.length){el.innerHTML='<div class="empty" style="padding:12px 0;">No rounds match current filters</div>';return;}
+  var sorted=rounds.slice().sort(function(a,b){return b.date.localeCompare(a.date);});
+  el.innerHTML=sorted.map(function(r){
+    var meta=[r.gun,r.choke,r.weather,r.temp?r.temp+'°C':''].filter(Boolean).join(' · ');
+    return'<div class="log-row" onclick="openModal('+r.id+')">'
+      +'<div class="log-row-top"><div><span class="log-row-score">'+r.score+'/'+r.max+'</span><span class="log-row-pct">'+r.pct+'%</span></div>'
+      +'<div class="log-row-disc">'+DNAMES[r.disc]+'</div></div>'
+      +'<div class="log-row-meta">'+r.date+(meta?' · '+meta:'')+'</div>'
+      +(r.notes?'<div style="font-size:10px;color:var(--text3);font-style:italic;margin-top:2px;">"'+r.notes+'"</div>':'')
+      +'</div>';
+  }).join('');
+}
+
+/* ── MODAL ── */
+function openModal(id){
+  var r=getRounds().find(function(x){return x.id===id;});
+  if(!r)return;
+  var byStn={};
+  if(r.results){r.results.forEach(function(res){
+    var k='S'+res.stn+(res.kind==='pair'?'p':'s');
+    if(!byStn[k])byStn[k]={lbl:'S'+res.stn+(res.kind==='pair'?'p':''),hit:0,total:0};
+    byStn[k].total++;if(res.hit)byStn[k].hit++;
+  });}
+  var stns=Object.values(byStn);
+  var stnGrid=stns.length?'<div class="modal-field"><div class="modal-label">Station Breakdown</div><div class="modal-stn-grid">'
+    +stns.map(function(p){
+      var pct=p.total>0?Math.round(p.hit/p.total*100):0;
+      var cls=pct>=80?'good':pct>=50?'ok':'bad';
+      return'<div class="modal-stn '+cls+'"><div class="modal-stn-lbl">'+p.lbl+'</div><div class="modal-stn-val">'+p.hit+'/'+p.total+'</div></div>';
+    }).join('')+'</div></div>':'';
+  document.getElementById('modal-content').innerHTML=
+    '<div class="modal-field"><div class="modal-label">Date &amp; Discipline</div><div class="modal-val">'+r.date+' · '+DNAMES[r.disc]+'</div></div>'
+    +'<div class="modal-field"><div class="modal-label">Score</div><div class="modal-val" style="font-size:22px;font-weight:700;">'+r.score+'/'+r.max+' <span style="font-size:16px;color:var(--text2);">('+r.pct+'%)</span></div></div>'
+    +'<div class="modal-field"><div class="modal-label">Gun</div><div class="modal-val">'+(r.gun||'—')+' ('+(r.gunType==='ou'?'O/U':'SA')+')</div></div>'
+    +'<div class="modal-field"><div class="modal-label">Choke</div><div class="modal-val">'+(r.choke||'—')+'</div></div>'
+    +'<div class="modal-field"><div class="modal-label">Ammo</div><div class="modal-val">'+(r.ammo||'—')+'</div></div>'
+    +'<div class="modal-field"><div class="modal-label">Weather</div><div class="modal-val">'+(r.weather||'—')+(r.temp?' · '+r.temp+'°C':'')+(r.wind?' · Wind '+r.wind+' km/h':'')+'</div></div>'
+    +'<div class="modal-field"><div class="modal-label">Light</div><div class="modal-val">'+(r.light||'—')+'</div></div>'
+    +(r.notes?'<div class="modal-field"><div class="modal-label">Notes</div><div class="modal-val" style="font-style:italic;">"'+r.notes+'"</div></div>':'')
+    +stnGrid;
+  document.getElementById('round-modal').style.display='block';
+}
+function closeModal(){document.getElementById('round-modal').style.display='none';}
+
+/* ── EXPORT ── */
+/* ── EXPORT ── */
+function exportCSV(){
+  var rounds=getRounds();
+  if(!rounds.length){alert('No rounds to export yet.');return;}
+  var rows=[['Date','Discipline','Score','Max','Pct%','Gun','Gun Type','Choke','Ammo','Temp(C)','Wind(km/h)','Weather','Light','Notes','Station','House','Kind','Hit','Option']];
+  rounds.forEach(function(r){
+    var base=[r.date,DNAMES[r.disc]||r.disc,r.score,r.max,r.pct,r.gun||'',r.gunType||'',r.choke||'',r.ammo||'',r.temp||'',r.wind||'',r.weather||'',r.light||'',r.notes||''];
+    if(r.results&&r.results.length){
+      r.results.forEach(function(res){rows.push(base.concat([res.stn,res.house||'',res.kind,res.hit?1:0,res.opt?1:0]));});
+    } else rows.push(base.concat(['','','','','']));
+  });
+  var csv=rows.map(function(row){return row.map(function(c){var s=String(c==null?'':c);if(s.indexOf(',')>-1||s.indexOf('"')>-1)s='"'+s.replace(/"/g,'""')+'"';return s;}).join(',');}).join('\n');
+  var blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');a.href=url;a.download='clay_tracker_'+TODAY+'.csv';
+  document.body.appendChild(a);a.click();
+  setTimeout(function(){document.body.removeChild(a);URL.revokeObjectURL(url);},500);
+}
+
+
+/* ════════════════════════════════════════════════
+   SPORTING CLAYS STATION LOGGER ENGINE
+   ════════════════════════════════════════════════ */
+
+var scRound = {
+  stationNumber: 1,
+  history: [],
+  meta: {}          /* gun, ammo, choke, date, weather etc from log page */
+};
+var scStation = {
+  machines: [],     /* [1,2,3,4] active */
+  presentation: 'Singles',
+  attemptsTotal: 3,
+  shots: []
+};
+var scAttempt = {
+  current: 1,
+  targetIndex: 1    /* 1 = target A, 2 = target B (pairs) */
+};
+
+function scShowPage(id){
+  ['sc-config','sc-shoot','sc-summary','sc-review'].forEach(function(p){
+    document.getElementById(p).classList.remove('on');
+  });
+  var el = document.getElementById(id);
+  el.classList.add('on');
+  el.querySelector('.sc-bg').classList.add('sc-fade-in');
+  setTimeout(function(){ el.querySelector('.sc-bg').classList.remove('sc-fade-in'); }, 300);
+}
+
+function scExit(){
+  ['sc-config','sc-shoot','sc-summary','sc-review'].forEach(function(p){
+    document.getElementById(p).classList.remove('on');
+  });
+}
+
+function scGoConfig(){
+  scShowPage('sc-config');
+  scRenderConfig();
+}
+
+/* Called from startShoot() when disc==='sc' */
+function scBeginRound(){
+  /* Capture log page metadata */
+  var gunId=parseInt(document.getElementById('log-gun-sel').value)||0;
+  var ammoId=parseInt(document.getElementById('log-ammo-sel').value)||0;
+  var gun=getGuns().find(function(g){return g.id===gunId;});
+  var ammo=getAmmos().find(function(a){return a.id===ammoId;});
+  scRound = {
+    stationNumber: 1,
+    history: [],
+    meta: {
+      date: document.getElementById('date-in').value || TODAY,
+      gun: gun ? gun.model : '',
+      gunType: gun ? gun.type : '',
+      choke: getSelectedChoke(),
+      ammo: ammo ? (ammo.make+(ammo.model?' '+ammo.model:'')+' '+ammo.shot) : '',
+      temp: document.getElementById('temp-in').value,
+      wind: document.getElementById('wind-in').value,
+      weather: document.getElementById('wx-in').value,
+      light: document.getElementById('lt-in').value,
+      notes: document.getElementById('notes-in').value.trim()
+    }
+  };
+  scStation = { machines:[], presentation:'Singles', attemptsTotal:3, shots:[] };
+  scGoConfig();
+}
+
+function scRenderConfig(){
+  document.getElementById('sc-config-title').textContent = 'Station ' + scRound.stationNumber;
+  document.getElementById('sc-start-btn').textContent = 'Start Shooting at Station ' + scRound.stationNumber;
+  /* Reset machine buttons */
+  [1,2,3,4].forEach(function(n){
+    var btn = document.getElementById('sc-m'+n);
+    btn.classList.toggle('on', scStation.machines.indexOf(n) > -1);
+  });
+  /* Reset presentation */
+  ['singles','report','true'].forEach(function(k){ document.getElementById('sc-pres-'+k).classList.remove('on'); });
+  var presKey = scStation.presentation === 'Singles' ? 'singles' : scStation.presentation === 'Report Pair' ? 'report' : 'true';
+  document.getElementById('sc-pres-'+presKey).classList.add('on');
+  document.getElementById('sc-attempts').value = scStation.attemptsTotal;
+}
+
+function scToggleMachine(n){
+  vib(20);
+  var idx = scStation.machines.indexOf(n);
+  if(idx > -1){ scStation.machines.splice(idx,1); }
+  else { scStation.machines.push(n); scStation.machines.sort(); }
+  var btn = document.getElementById('sc-m'+n);
+  btn.classList.toggle('on', scStation.machines.indexOf(n) > -1);
+}
+
+function scSetPres(type, btn){
+  scStation.presentation = type;
+  document.querySelectorAll('.sc-pres-btn').forEach(function(b){ b.classList.remove('on'); });
+  btn.classList.add('on');
+}
+
+function scStartStation(){
+  var isPair = scStation.presentation !== 'Singles';
+  var minMachines = isPair ? 2 : 1;
+  if(scStation.machines.length < minMachines){
+    alert(isPair ? 'Select at least 2 machines for a pair.' : 'Select at least 1 machine.');
+    return;
+  }
+  scStation.attemptsTotal = parseInt(document.getElementById('sc-attempts').value) || 3;
+  scStation.shots = [];
+  scAttempt = { current: 1, targetIndex: 1 };
+  scShowPage('sc-shoot');
+  scRenderShoot();
+}
+
+function scRenderShoot(){
+  var isPair = scStation.presentation !== 'Singles';
+  document.getElementById('sc-shoot-title').textContent = 'Station ' + scRound.stationNumber;
+  document.getElementById('sc-shoot-sub').textContent = scStation.presentation;
+  document.getElementById('sc-attempt-label').textContent = 'Attempt ' + scAttempt.current + ' of ' + scStation.attemptsTotal;
+  document.getElementById('sc-attempt-big').textContent = isPair
+    ? (scAttempt.targetIndex === 1 ? 'Target A  →  Machine ' + scStation.machines[0] : 'Target B  →  Machine ' + scStation.machines[1])
+    : 'Machine ' + scStation.machines[0];
+
+  /* Build target boxes */
+  var row = document.getElementById('sc-targets-row');
+  row.innerHTML = '';
+  if(isPair){
+    [0,1].forEach(function(i){
+      var box = document.createElement('div');
+      box.id = 'sc-tbox-' + i;
+      box.className = 'sc-target-box' + (scAttempt.targetIndex === i+1 ? ' active' : '');
+      /* Check if this target already logged this attempt */
+      var logged = scStation.shots.find(function(s){ return s.attemptIndex === scAttempt.current && s.targetIndex === i+1; });
+      if(logged){ box.classList.add(logged.result); }
+      box.innerHTML = '<div class="sc-target-box-lbl">'+(i===0?'Target A':'Target B')+'</div>'
+        +'<div class="sc-target-box-machine">M'+scStation.machines[i]+'</div>'
+        +'<div class="sc-target-box-result">'+(logged ? (logged.result==='hit'?'✓':'✕') : '')+'</div>';
+      row.appendChild(box);
+    });
+  } else {
+    var box = document.createElement('div');
+    box.className = 'sc-target-box active';
+    box.innerHTML = '<div class="sc-target-box-lbl">Target</div>'
+      +'<div class="sc-target-box-machine">M'+scStation.machines[0]+'</div>'
+      +'<div class="sc-target-box-result"></div>';
+    row.appendChild(box);
+  }
+}
+
+function addRipple(btn, e){
+  var r = document.createElement('span');
+  r.className = 'ripple';
+  var rect = btn.getBoundingClientRect();
+  var size = Math.max(rect.width, rect.height) * 1.5;
+  var x = (e.clientX - rect.left) - size/2;
+  var y = (e.clientY - rect.top) - size/2;
+  r.style.cssText = 'width:'+size+'px;height:'+size+'px;left:'+x+'px;top:'+y+'px;';
+  btn.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 500);
+}
+
+function scLogResult(result, e){
+  vib(result === 'hit' ? [20,10,30] : 20);
+  addRipple(e.currentTarget, e);
+  var isPair = scStation.presentation !== 'Singles';
+  var machineId = isPair ? scStation.machines[scAttempt.targetIndex - 1] : scStation.machines[0];
+  scStation.shots.push({
+    attemptIndex: scAttempt.current,
+    targetIndex: scAttempt.targetIndex,
+    machineId: machineId,
+    result: result
+  });
+
+  if(isPair && scAttempt.targetIndex === 1){
+    /* Move to target B same attempt */
+    scAttempt.targetIndex = 2;
+    scRenderShoot();
+    return;
+  }
+
+  /* Advance attempt */
+  scAttempt.targetIndex = 1;
+  scAttempt.current++;
+  if(scAttempt.current > scStation.attemptsTotal){
+    /* Station done → summary */
+    setTimeout(function(){ scShowSummary(); }, 200);
+  } else {
+    scRenderShoot();
+  }
+}
+
+function scShowSummary(){
+  scShowPage('sc-summary');
+  var hits = scStation.shots.filter(function(s){ return s.result === 'hit'; }).length;
+  var total = scStation.shots.length;
+  document.getElementById('sc-sum-title').textContent = 'Station ' + scRound.stationNumber + ' Summary';
+  document.getElementById('sc-sum-sub').textContent = hits + ' hit / ' + total + ' shots (' + Math.round(hits/total*100) + '%)';
+
+  var grid = document.getElementById('sc-shot-grid');
+  grid.innerHTML = '';
+  scStation.shots.forEach(function(s){
+    var chip = document.createElement('div');
+    chip.className = 'sc-shot-chip ' + s.result;
+    chip.innerHTML = '<div class="sc-shot-chip-icon">'+(s.result==='hit'?'✓':'✕')+'</div>'
+      +'<div>M'+s.machineId+'</div>'
+      +'<div>A'+s.attemptIndex+(scStation.presentation!=='Singles'?'·T'+s.targetIndex:'')+'</div>';
+    grid.appendChild(chip);
+  });
+}
+
+function scNextStation(){
+  /* Save this station to round history */
+  scRound.history.push({
+    station: scRound.stationNumber,
+    machines: scStation.machines.slice(),
+    presentationType: scStation.presentation,
+    attemptsTotal: scStation.attemptsTotal,
+    shots: scStation.shots.slice()
+  });
+  scRound.stationNumber++;
+  /* Reset station state but keep machines as starting point */
+  scStation = { machines: scStation.machines.slice(), presentation: scStation.presentation, attemptsTotal: scStation.attemptsTotal, shots: [] };
+  scGoConfig();
+}
+
+function scStopRound(){
+  /* Save current station if any shots logged */
+  if(scStation.shots.length > 0){
+    scRound.history.push({
+      station: scRound.stationNumber,
+      machines: scStation.machines.slice(),
+      presentationType: scStation.presentation,
+      attemptsTotal: scStation.attemptsTotal,
+      shots: scStation.shots.slice()
+    });
+  }
+  scShowReview();
+}
+
+function scShowReview(){
+  scShowPage('sc-review');
+
+  var totalHits = 0, totalShots = 0;
+  scRound.history.forEach(function(st){ st.shots.forEach(function(s){ totalShots++; if(s.result==='hit')totalHits++; }); });
+  document.getElementById('sc-review-sub').textContent = totalHits + ' / ' + totalShots + ' total hits (' + (totalShots>0?Math.round(totalHits/totalShots*100):0) + '%)';
+
+  var list = document.getElementById('sc-review-list');
+  list.innerHTML = '';
+  scRound.history.forEach(function(st){
+    var hits = st.shots.filter(function(s){ return s.result==='hit'; }).length;
+    var total = st.shots.length;
+    var pct = total > 0 ? Math.round(hits/total*100) : 0;
+    var fillColor = pct >= 80 ? '#39FF14' : pct >= 50 ? '#FFD700' : '#DC143C';
+    var machineStr = 'Machine' + (st.machines.length>1?'s ':' ') + st.machines.join(' & ');
+    var card = document.createElement('div');
+    card.className = 'sc-review-card sc-fade-in';
+    card.innerHTML = '<div class="sc-review-stn">Station '+st.station+'</div>'
+      +'<div class="sc-review-setup">'+st.presentationType+' · '+machineStr+'</div>'
+      +'<div class="sc-review-bar"><div class="sc-review-fill" style="width:'+pct+'%;background:'+fillColor+';"></div></div>'
+      +'<div class="sc-review-ratio"><strong>'+hits+' / '+total+'</strong> ('+pct+'%)</div>';
+    list.appendChild(card);
+  });
+
+  /* JSON export block */
+  document.getElementById('sc-json-block').textContent = JSON.stringify({
+    meta: scRound.meta,
+    totalStations: scRound.history.length,
+    totalHits: totalHits,
+    totalShots: totalShots,
+    pct: totalShots > 0 ? Math.round(totalHits/totalShots*100) : 0,
+    stations: scRound.history
+  }, null, 2);
+
+  /* Also save to global rounds store */
+  var rounds = getRounds();
+  rounds.push({
+    id: Date.now(),
+    disc: 'sc',
+    date: scRound.meta.date,
+    gun: scRound.meta.gun,
+    gunType: scRound.meta.gunType,
+    choke: scRound.meta.choke,
+    ammo: scRound.meta.ammo,
+    temp: scRound.meta.temp,
+    wind: scRound.meta.wind,
+    weather: scRound.meta.weather,
+    light: scRound.meta.light,
+    notes: scRound.meta.notes,
+    score: totalHits,
+    max: totalShots,
+    pct: totalShots > 0 ? Math.round(totalHits/totalShots*100) : 0,
+    scStations: scRound.history,
+    results: (function(){
+      var r=[];
+      scRound.history.forEach(function(st){
+        st.shots.forEach(function(s){
+          r.push({stn:st.station,house:null,kind:st.presentationType==='Singles'?'single':'pair',hit:s.result==='hit',machineId:s.machineId});
+        });
+      });
+      return r;
+    })()
+  });
+  sv('csv8', rounds);
+  vib([30,20,60]);
+}
+
+function scNewRound(){
+  scExit();
+  goPg('log');
+}
+
+/* END SPORTING CLAYS ENGINE */
+
+/* ── INIT ── */
+setGunType('ou',document.getElementById('eq-type-ou'));
+buildLogDropdowns();
+</script>
+</body>
+</html>
